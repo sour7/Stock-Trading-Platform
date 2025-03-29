@@ -1,0 +1,97 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  balance   Float    @default(100000)
+  trades    Trade[]
+  portfolio Portfolio[]
+  createdAt DateTime @default(now())
+}
+
+// model Stock {
+//   id         String   @id @default(uuid())
+//   symbol     String   @unique
+//   name       String
+//   price      Float
+//   history    StockPriceHistory[]
+//   createdAt  DateTime @default(now())
+//   Trade Trade[]
+//   Portfolio Portfolio[]
+// }
+
+// model StockPriceHistory {
+//   id       String  @id @default(uuid())
+//   stockId  String  @unique
+//   stock    Stock   @relation(fields: [stockId], references: [id])
+//   price    Float
+//   date     DateTime @default(now())
+// }
+
+model Stock {
+  id            String   @id @default(uuid())
+  symbol        String   @unique
+  name          String
+  currentPrice  Float
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  history       StockPriceHistory[]
+  Trade Trade[]
+  Portfolio Portfolio[]
+}
+
+model StockPriceHistory {
+  id        String   @id @default(uuid())
+  stockId   String
+  stock     Stock    @relation(fields: [stockId], references: [id], onDelete: Cascade)
+  price     Float
+  timestamp DateTime @default(now())
+
+  @@index([stockId, timestamp]) // Index for faster queries
+}
+
+
+model Trade {
+  id        String  @id @default(uuid())
+  userId    String
+  stockId   String
+  type      TradeType
+  quantity  Int
+  price     Float
+  createdAt DateTime @default(now())
+
+  user   User  @relation(fields: [userId], references: [id])
+  stock  Stock @relation(fields: [stockId], references: [id])
+  
+}
+
+model Portfolio {
+  id        String  @id @default(uuid())
+  userId    String
+  stockId   String
+  quantity  Int
+  avgPrice  Float
+  user      User  @relation(fields: [userId], references: [id])
+  stock     Stock @relation(fields: [stockId], references: [id])
+
+  @@unique([userId, stockId]) 
+}
+
+enum TradeType {
+  BUY
+  SELL
+}
